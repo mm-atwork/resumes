@@ -1,0 +1,37 @@
+name: Resume builder
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  resume_job:
+    runs-on: ubuntu-latest
+    container:
+      image: fixl/json-resume:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: resume - index.html update
+        shell: bash
+        run: |
+          THEME="jsonresume-theme-elegant"
+          for USRDIR in $GITHUB_WORKSPACE/html/*/ ; do
+              pushd "${USRDIR}"
+              resume export --theme /usr/local/lib/node_modules/${THEME} --format html $USRDIR/index.html -r $USRDIR/resume.json
+              popd 2>&1 > /dev/null
+          done
+
+      - name: Update repo
+        uses: test-room-7/action-update-file@v1
+        with:
+            file-path: html/**/*.html
+            commit-msg: Update resumes
+            github-token: ${{ secrets.GITHUB_TOKEN }}
